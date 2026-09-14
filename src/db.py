@@ -15,6 +15,19 @@ def init_db():
             raw_json TEXT
         )
     """)
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS outage_events (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        area TEXT,
+        stage INTEGER,
+        start_time TEXT,
+        end_time TEXT,
+        duration_hours REAL,
+        UNIQUE(area, start_time)
+        )
+    """)
+
     conn.commit()
     conn.close()
 
