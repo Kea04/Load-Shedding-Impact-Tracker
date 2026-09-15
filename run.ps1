@@ -1,28 +1,35 @@
+param([switch]$Mock)
+
 $ErrorActionPreference = "Stop"
 
 Write-Host "=== Load Shedding Tracker: Build & Run ===" -ForegroundColor Cyan
 
-# 1. Create venv if it doesn't exist
 if (-not (Test-Path ".venv")) {
     Write-Host "Creating virtual environment..."
     python -m venv .venv
 }
 
-# 2. Activate venv
 & .\.venv\Scripts\Activate.ps1
 
-# 3. Install dependencies
 Write-Host "Installing dependencies..."
 pip install -q -r requirements.txt
 
-# 4. Syntax check ("compile") all source files
 Write-Host "Checking syntax..."
-python -m py_compile src\*.py config\*.py analysis\*.py
+$pyFiles = Get-ChildItem -Path src, config, analysis -Filter *.py -Recurse | ForEach-Object { $_.FullName }
+python -m py_compile $pyFiles
 
-# 5. Run tests
 Write-Host "Running tests..."
 pytest tests\ -v
 
-# 6. Run the pipeline
 Write-Host "Running pipeline..."
-python -m src.main
+if ($Mock) {
+    python -m src.main --mock
+} else {
+    python -m src.main
+}
+
+Write-Host "Generating visualization..."
+if (-not (Test-Path "screenshots")) {
+    New-Item -ItemType Directory -Path "screenshots" | Out-Null
+}
+python -m analysis.visualize
